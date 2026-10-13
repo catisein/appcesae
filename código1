@@ -1,0 +1,29 @@
+import { StatusBar } from 'expo-status-bar';
+import { Image, StyleSheet, Text, View } from 'react-native';
+
+export default function App() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.text}>Olá! 👋 Esta é a minha primeira aplicação React Native!</Text>
+      <StatusBar style="auto" />
+      <Image
+        style={{ width: 150, height: 150 }}
+        source={{
+          uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQaVDWXX7_r2UFYdq6aAu5sOxOEhiNeNUJ0_yeqOfsuPw&s',
+        }}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  text: {
+    marginBottom: 20, // Espaço adicionado abaixo da frase
+  },
+});
