@@ -1,17 +1,29 @@
 import { StatusBar } from 'expo-status-bar';
 import { Image, StyleSheet, Text, View } from 'react-native';
+import Header from './src/components/Header/header';
+import AppButton from './src/components/AppButton/appButton';
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Olá! 👋 Esta é a minha primeira aplicação React Native!</Text>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
+
+      <Header
+        titulo="FC Porto 💙"
+        subtitulo="Por cima dos rivais há um céu azul! 😄"
+        style={styles.header}
+      />
+
       <Image
-        style={{ width: 150, height: 150 }}
+        style={styles.image}
         source={{
           uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQaVDWXX7_r2UFYdq6aAu5sOxOEhiNeNUJ0_yeqOfsuPw&s',
         }}
       />
+
+      <Text style={styles.message}>Aqui é Dragão! 🐉</Text>
+
+      <AppButton />
     </View>
   );
 }
@@ -19,11 +31,23 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#0050A4',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 24,
   },
-  text: {
-    marginBottom: 20, // Espaço adicionado abaixo da frase
+  header: {
+    backgroundColor: '#003B70',
+  },
+  image: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    marginBottom: 20,
+  },
+  message: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginBottom: 20,
   },
 });
