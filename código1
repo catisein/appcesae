@@ -1,29 +1,167 @@
-import { StatusBar } from 'expo-status-bar';
-import { Image, StyleSheet, Text, View } from 'react-native';
-import Header from './src/components/Header/header';
-import AppButton from './src/components/AppButton/appButton';
+import { useState } from "react";
+import { StatusBar } from "expo-status-bar";
+import {
+  Alert,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import Header from "./src/components/Header/header";
+import AppButton from "./src/components/AppButton/appButton";
+
+type Tarefa = {
+  id: string;
+  titulo: string;
+  concluida: boolean;
+};
+
+type Filtro = "todas" | "pendentes" | "concluidas";
+
+type TarefaCardProps = {
+  tarefa: Tarefa;
+  onDelete: (id: string) => void;
+  onComplete: (id: string) => void;
+};
+
+const tarefasIniciais: Tarefa[] = [
+  { id: "1", titulo: "Apoiar o FC Porto 💙", concluida: false },
+  { id: "2", titulo: "Vestir-me de azul e branco", concluida: false },
+  { id: "3", titulo: "Picar os rivais com um centímetro 😄", concluida: true },
+];
+
+function TarefaCard({ tarefa, onDelete, onComplete }: TarefaCardProps) {
+  return (
+    <View style={styles.card}>
+      <Text style={[styles.tarefa, tarefa.concluida && styles.concluida]}>
+        {tarefa.concluida ? "✅ " : "🔵 "}
+        {tarefa.titulo}
+      </Text>
+
+      <View style={styles.botoesCard}>
+        <AppButton
+          title={tarefa.concluida ? "Reabrir" : "Feito! 😄"}
+          onPress={() => onComplete(tarefa.id)}
+        />
+        <AppButton
+          title="Nada feito! 😢"
+          onPress={() => onDelete(tarefa.id)}
+        />
+      </View>
+    </View>
+  );
+}
 
 export default function App() {
+  const nome = "Portista";
+  const [contador, setContador] = useState(0);
+  const [novaTarefa, setNovaTarefa] = useState("");
+  const [tarefas, setTarefas] = useState<Tarefa[]>(tarefasIniciais);
+  const [filtro, setFiltro] = useState<Filtro>("todas");
+
+  function inserirTarefa() {
+    const titulo = novaTarefa.trim();
+
+    if (titulo.length === 0) {
+      Alert.alert("Falta o texto", "Escreve uma tarefa antes de inserir.");
+      return;
+    }
+
+    const tarefaNova: Tarefa = {
+      id: String(Date.now()),
+      titulo,
+      concluida: false,
+    };
+
+    setTarefas([...tarefas, tarefaNova]);
+    setNovaTarefa("");
+  }
+
+  function eliminarTarefa(id: string) {
+    setTarefas(tarefas.filter((tarefa) => tarefa.id !== id));
+  }
+
+  function alterarTarefa(id: string) {
+    setTarefas(
+      tarefas.map((tarefa) =>
+        tarefa.id === id
+          ? { ...tarefa, concluida: !tarefa.concluida }
+          : tarefa
+      )
+    );
+  }
+
+  const tarefasOrdenadas = [...tarefas].sort(
+    (a, b) => Number(a.concluida) - Number(b.concluida)
+  );
+
+  const tarefasVisiveis = tarefasOrdenadas.filter((tarefa) => {
+    if (filtro === "pendentes") return !tarefa.concluida;
+    if (filtro === "concluidas") return tarefa.concluida;
+    return true;
+  });
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
 
       <Header
         titulo="FC Porto 💙"
-        subtitulo="Por cima dos rivais há um céu azul! 😄"
+        subtitulo="Aqui há Dragão! 🐉"
         style={styles.header}
       />
 
+      <Text style={styles.mensagem}>Olá, {nome}!</Text>
+      <Text style={styles.mensagem}>
+        Por cima dos rivais há um céu azul! 😄
+      </Text>
+
       <Image
-        style={styles.image}
+        style={styles.imagem}
         source={{
-          uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQaVDWXX7_r2UFYdq6aAu5sOxOEhiNeNUJ0_yeqOfsuPw&s',
+          uri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQaVDWXX7_r2UFYdq6aAu5sOxOEhiNeNUJ0_yeqOfsuPw&s",
         }}
       />
 
-      <Text style={styles.message}>Aqui é Dragão! 🐉</Text>
+      <Text style={styles.contador}>Aplausos ao Dragão: {contador}</Text>
+      <AppButton
+        title="Força, Porto!"
+        onPress={() => setContador(contador + 1)}
+      />
 
-      <AppButton />
+      <View style={styles.linhaInput}>
+        <TextInput
+          value={novaTarefa}
+          onChangeText={setNovaTarefa}
+          placeholder="Insere uma tarefa"
+          style={styles.input}
+        />
+        <AppButton title="Inserir" onPress={inserirTarefa} />
+      </View>
+
+      <View style={styles.filtros}>
+        <AppButton title="Todas" onPress={() => setFiltro("todas")} />
+        <AppButton title="Pendentes" onPress={() => setFiltro("pendentes")} />
+        <AppButton
+          title="Concluídas"
+          onPress={() => setFiltro("concluidas")}
+        />
+      </View>
+
+      <FlatList
+        style={styles.lista}
+        data={tarefasVisiveis}
+        keyExtractor={(tarefa) => tarefa.id}
+        renderItem={({ item }) => (
+          <TarefaCard
+            tarefa={item}
+            onDelete={eliminarTarefa}
+            onComplete={alterarTarefa}
+          />
+        )}
+      />
     </View>
   );
 }
@@ -31,23 +169,63 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0050A4',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
+    backgroundColor: "#0050A4",
+    padding: 16,
   },
   header: {
-    backgroundColor: '#003B70',
+    backgroundColor: "#003B70",
   },
-  image: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    marginBottom: 20,
+  mensagem: {
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 6,
   },
-  message: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    marginBottom: 20,
+  imagem: {
+    width: 90,
+    height: 90,
+    alignSelf: "center",
+    margin: 8,
+  },
+  contador: {
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  linhaInput: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 12,
+  },
+  input: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 6,
+    padding: 10,
+    marginRight: 8,
+  },
+  filtros: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  lista: {
+    flex: 1,
+  },
+  card: {
+    backgroundColor: "#FFFFFF",
+    padding: 12,
+    borderRadius: 6,
+    marginBottom: 8,
+  },
+  tarefa: {
+    color: "#003B70",
+    marginBottom: 8,
+  },
+  concluida: {
+    textDecorationLine: "line-through",
+  },
+  botoesCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
 });
