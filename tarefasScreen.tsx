@@ -1,234 +1,188 @@
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { StatusBar } from "expo-status-bar";
-import { useMemo, useState } from "react";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useEffect, useState } from "react";
 import {
-  Alert,
   FlatList,
   StyleSheet,
   Text,
-  TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
-
-import AppButton from "../../components/AppButton/appButton";
 import Card from "../../components/Card/card";
 import Header from "../../components/Header/header";
-import type { RootStackParamList } from "../../navigation/types";
+import { RootStackParamList } from "../../navigation/types";
 import type { Tarefa } from "./types";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Tarefas">;
-
-type Filtro = "todas" | "pendentes" | "concluidas";
-
-const tarefasIniciais: Tarefa[] = [
+const data = [
   {
     id: "1",
     titulo: "Apoiar o FC Porto 💙",
-    descricao: "Apoiar a equipa e acreditar na vitória!",
     concluida: false,
   },
   {
     id: "2",
-    titulo: "Vestir-me de azul e branco",
-    descricao: "Mostrar as cores do nosso clube!",
+    titulo: "Vestir de azul e branco 🐉",
     concluida: false,
   },
   {
     id: "3",
-    titulo: "Picar os rivais com um centímetro 😄",
-    descricao: "Uma brincadeira saudável entre adeptos.",
+    titulo: "Garantir a vitória no Dragão",
     concluida: true,
   },
-];
+] as Array<Tarefa>;
 
-export default function TarefasScreen({ navigation }: Props) {
-  const [novaTarefa, setNovaTarefa] = useState("");
-  const [tarefas, setTarefas] = useState<Tarefa[]>(tarefasIniciais);
-  const [filtro, setFiltro] = useState<Filtro>("todas");
-  const [pesquisa, setPesquisa] = useState("");
+type Filtro = "todas" | "concluidas" | "pendentes";
 
-  function inserirTarefa() {
-    const titulo = novaTarefa.trim();
+type NavigationProps = NativeStackScreenProps<RootStackParamList, "Tarefas">;
 
-    if (titulo.length === 0) {
-      Alert.alert(
-        "Falta o texto",
-        "Escreve uma tarefa antes de inserir.",
-      );
-      return;
+export default function TarefasScreen({ navigation, route }: NavigationProps) {
+  const [tarefas, setTarefas] = useState(data as Tarefa[]);
+  const [filtro, setFiltro] = useState("todas" as Filtro);
+
+  // Escuta a nova tarefa enviada pelo FormularioScreen
+  useEffect(() => {
+    const params = route.params as any;
+    if (params?.novaTarefaAdicionada) {
+      setTarefas((tarefasAtuais) => [params.novaTarefaAdicionada, ...tarefasAtuais]);
+      // Limpa o parâmetro para não duplicar se o ecrã re-renderizar
+      navigation.setParams({ novaTarefaAdicionada: undefined } as any);
     }
+  }, [route.params]);
 
-    const tarefa: Tarefa = {
-      id: String(Date.now()),
-      titulo,
-      descricao: "Tarefa pessoal relacionada com o FC Porto.",
-      concluida: false,
-    };
-
-    setTarefas((atuais) => [...atuais, tarefa]);
-    setNovaTarefa("");
-  }
-
-  function eliminarTarefa(id: string) {
-    setTarefas((atuais) =>
-      atuais.filter((tarefa) => tarefa.id !== id),
-    );
-  }
-
-  function alterarTarefa(id: string) {
-    setTarefas((atuais) =>
-      atuais.map((tarefa) =>
-        tarefa.id === id
-          ? { ...tarefa, concluida: !tarefa.concluida }
-          : tarefa,
-      ),
-    );
-  }
-
-  const tarefasVisiveis = useMemo(() => {
-    const termo = pesquisa.trim().toLocaleLowerCase("pt-PT");
-
-    return tarefas.filter((tarefa) => {
-      const correspondeAoFiltro =
-        filtro === "todas" ||
-        (filtro === "pendentes" && !tarefa.concluida) ||
-        (filtro === "concluidas" && tarefa.concluida);
-
-      const correspondeAPesquisa = tarefa.titulo
-        .toLocaleLowerCase("pt-PT")
-        .includes(termo);
-
-      return correspondeAoFiltro && correspondeAPesquisa;
-    });
-  }, [tarefas, filtro, pesquisa]);
+  const tarefasVisiveis = () => {
+    if (filtro === "pendentes") {
+      return tarefas.filter((task) => !task.concluida);
+    }
+    if (filtro === "concluidas") {
+      return tarefas.filter((task) => task.concluida);
+    }
+    return tarefas;
+  };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
-
-      <Header
-        titulo="As minhas tarefas"
-        subtitulo="Foco na vitória!"
-      />
-
-      <TextInput
-        value={novaTarefa}
-        onChangeText={setNovaTarefa}
-        placeholder="Escreve uma nova tarefa"
-        placeholderTextColor="#666666"
-        style={styles.input}
-        returnKeyType="done"
-        onSubmitEditing={inserirTarefa}
-        accessibilityLabel="Nova tarefa"
-      />
-
-      <AppButton
-        title="Adicionar tarefa"
-        onPress={inserirTarefa}
-      />
-
-      <TextInput
-        value={pesquisa}
-        onChangeText={setPesquisa}
-        placeholder="Pesquisar tarefas..."
-        placeholderTextColor="#666666"
-        style={styles.inputPesquisa}
-        accessibilityLabel="Pesquisar tarefas"
-      />
-
-      <View style={styles.filtros}>
-        <AppButton
-          title="Todas"
-          onPress={() => setFiltro("todas")}
-        />
-
-        <AppButton
-          title="Pendentes"
-          onPress={() => setFiltro("pendentes")}
-        />
-
-        <AppButton
-          title="Concluídas"
-          onPress={() => setFiltro("concluidas")}
-        />
+    <View style={styles.mainContainer}>
+      {/* Cabeçalho com botão de voltar */}
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.voltarBtn}>
+          <Text style={styles.voltarText}>← Voltar</Text>
+        </TouchableOpacity>
+        <Header titulo="Tarefas" subtitulo="Rumo à Vitória!" />
       </View>
 
-      <Text style={styles.contagem}>
-        {tarefasVisiveis.length} tarefa(s) apresentada(s)
-      </Text>
+      {/* Botão que navega para o Ecrã de Formulário à parte */}
+      <TouchableOpacity
+        style={styles.botaoAbrirFormulario}
+        onPress={() => navigation.navigate("Formulario")}
+      >
+        <Text style={styles.textoBotaoFormulario}>+ Adicionar Nova Tarefa</Text>
+      </TouchableOpacity>
 
+      {/* Botões de Filtro */}
+      <View style={styles.filtrosRow}>
+        <TouchableOpacity
+          onPress={() => setFiltro("todas")}
+          style={[styles.filtroBtn, filtro === "todas" && styles.filtroAtivo]}
+        >
+          <Text style={[styles.filtroText, filtro === "todas" && styles.textoFiltroAtivo]}>Ver todas</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setFiltro("concluidas")}
+          style={[styles.filtroBtn, filtro === "concluidas" && styles.filtroAtivo]}
+        >
+          <Text style={[styles.filtroText, filtro === "concluidas" && styles.textoFiltroAtivo]}>Concluídas</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setFiltro("pendentes")}
+          style={[styles.filtroBtn, filtro === "pendentes" && styles.filtroAtivo]}
+        >
+          <Text style={[styles.filtroText, filtro === "pendentes" && styles.textoFiltroAtivo]}>Pendentes</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Lista de Tarefas */}
       <FlatList
-        data={tarefasVisiveis}
-        keyExtractor={(item) => item.id}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={
-          tarefasVisiveis.length === 0
-            ? styles.listaVazia
-            : undefined
-        }
-        ListEmptyComponent={
-          <Text style={styles.mensagemVazia}>
-            Não existem tarefas para apresentar.
-          </Text>
-        }
-        renderItem={({ item }) => (
-          <Card
-            id={item.id}
-            titulo={item.titulo}
-            concluida={item.concluida}
-            onToggle={() => alterarTarefa(item.id)}
-            onDelete={() => eliminarTarefa(item.id)}
-            onPress={() =>
-              navigation.navigate("Detalhes", {
-                tarefa: item,
-              })
-            }
-          />
-        )}
+        data={tarefasVisiveis()}
+        keyExtractor={(tarefa) => tarefa.id}
+        renderItem={({ item: tarefa }) => {
+          return (
+            <Card
+              titulo={tarefa.titulo}
+              concluida={tarefa.concluida}
+              id={tarefa.id}
+              onPress={() => navigation.navigate('Detalhes', { tarefa: tarefa })}
+              onDelete={() => {
+                setTarefas(tarefas.filter((t) => t.id !== tarefa.id));
+              }}
+              onToggle={() => {
+                setTarefas(
+                  tarefas.map((t) =>
+                    tarefa.id === t.id ? { ...t, concluida: !t.concluida } : t,
+                  ),
+                );
+              }}
+            />
+          );
+        }}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
+    paddingHorizontal: 16,
     backgroundColor: "#0050A4",
-    padding: 16,
   },
-  input: {
-    backgroundColor: "#FFFFFF",
-    color: "#003B70",
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 8,
-  },
-  inputPesquisa: {
-    backgroundColor: "#FFFFFF",
-    color: "#003B70",
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 16,
-    marginBottom: 12,
-  },
-  filtros: {
+  headerRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 8,
-    gap: 4,
+    alignItems: "center",
+    marginTop: 30,
   },
-  contagem: {
+  voltarBtn: {
+    paddingRight: 10,
+  },
+  voltarText: {
     color: "#FFFFFF",
-    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: "bold",
   },
-  listaVazia: {
-    flexGrow: 1,
+  botaoAbrirFormulario: {
+    backgroundColor: "#FFFFFF",
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    marginVertical: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  textoBotaoFormulario: {
+    color: "#0050A4",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  filtrosRow: {
+    marginBottom: 12,
+    flexDirection: "row",
     justifyContent: "center",
+    gap: 8,
   },
-  mensagemVazia: {
+  filtroBtn: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  filtroAtivo: {
+    backgroundColor: "#FFFFFF",
+  },
+  filtroText: {
     color: "#FFFFFF",
-    textAlign: "center",
-    padding: 20,
+    fontWeight: "bold",
+  },
+  textoFiltroAtivo: {
+    color: "#0050A4",
   },
 });
